@@ -182,7 +182,7 @@ function StartScreen({
           </div>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-          J.TEST プレチェック DE
+          J.TEST PreCheck <span className="text-emerald-500">DE</span>
         </h1>
         <p className="mt-3 text-base text-muted-foreground">Kiểm tra trình độ tiếng Nhật</p>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -304,7 +304,7 @@ function TestScreen({
       </div>
       <div className="w-full bg-gray-200 rounded h-2 mb-4">
         <div
-          className="bg-blue-500 h-2 rounded transition-all"
+          className="bg-green-700 h-2 rounded transition-all"
           style={{ width: `${((currentIndex + 1) / total) * 100}%` }}
         />
       </div>
@@ -351,14 +351,14 @@ function TestScreen({
               onClick={() => setSelectedAnswer(choice.key)}
               className={`w-full text-left px-4 py-3 rounded-lg border text-base transition-colors flex items-center gap-3 ${
                 selectedAnswer === choice.key
-                  ? "bg-blue-600 text-white border-blue-600"
+                  ? "bg-green-50 text-gray-900 border-green-500"
                   : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
               }`}
             >
               <span
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
                   selectedAnswer === choice.key
-                    ? "bg-white text-blue-600"
+                    ? "bg-green-600 text-white"
                     : "bg-gray-100 text-gray-700"
                 }`}
               >
