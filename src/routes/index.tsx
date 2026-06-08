@@ -237,272 +237,148 @@ function TestScreen({
   loading: boolean;
   error: string | null;
 }) {
-  const [index, setIndex] = useState(0);
-  const q = questions[index];
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const currentQuestion = questions[currentIndex];
   const total = questions.length;
-  const isLast = index === total - 1;
-  const selected = answers[q.question_id];
+  const isLast = currentIndex === total - 1;
 
-  const isListening =
-    q.section === "listening" || q.question_type === "listening";
-  const audioUrl = q.audio_url || q.audio_file || "";
-  const audioReady =
-    !isListening || !audioUrl || audioPlayedMap[q.question_id];
+  const selectedAnswer = answers[currentQuestion.question_id] ?? null;
+  const hasPlayed = !!audioPlayedMap[currentQuestion.question_id];
 
-  const pickChoice = (c: Choice) => {
-    setAnswers((prev) => ({ ...prev, [q.question_id]: c }));
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentIndex]);
+
+  const resolvedAudioUrl = resolveAudioUrl(currentQuestion.audio_url || "");
+
+  const choices = [
+    { key: "A" as Choice, value: currentQuestion.choice_a },
+    { key: "B" as Choice, value: currentQuestion.choice_b },
+    { key: "C" as Choice, value: currentQuestion.choice_c },
+    { key: "D" as Choice, value: currentQuestion.choice_d },
+  ].filter((c) => c.value && c.value.trim() !== "");
+
+  const showChoices =
+    currentQuestion.display_rule === "immediate" ||
+    currentQuestion.section !== "listening" ||
+    !resolvedAudioUrl ||
+    hasPlayed;
+
+  const setSelectedAnswer = (key: Choice) => {
+    setAnswers((prev) => ({ ...prev, [currentQuestion.question_id]: key }));
+  };
+
+  const setHasPlayed = () => {
+    setAudioPlayedMap((prev) => ({ ...prev, [currentQuestion.question_id]: true }));
   };
 
   const handleNext = () => {
     if (isLast) {
       onSubmit();
     } else {
-      setIndex((i) => i + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setCurrentIndex((i) => i + 1);
     }
   };
 
-  const choices = ([
-    { key: "A" as Choice, text: q.choice_a },
-    { key: "B" as Choice, text: q.choice_b },
-    { key: "C" as Choice, text: q.choice_c },
-    { key: "D" as Choice, text: q.choice_d },
-  ]).filter((c) => c.text && c.text.trim() !== "") as Array<{ key: Choice; text: string }>;
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-bold text-primary">問題 {index + 1} / {total}</span>
-          <span className="text-xs text-muted-foreground">{Math.round(((index + 1) / total) * 100)}%</span>
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-          <motion.div
-            className="h-full rounded-full bg-primary"
-            initial={false}
-            animate={{ width: `${((index + 1) / total) * 100}%` }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-          />
-        </div>
+    <div className="p-4 max-w-lg mx-auto">
+      {/* Progress */}
+      <div className="text-sm text-gray-500 mb-2">
+        {currentIndex + 1} / {total}
+      </div>
+      <div className="w-full bg-gray-200 rounded h-2 mb-4">
+        <div
+          className="bg-blue-500 h-2 rounded transition-all"
+          style={{ width: `${((currentIndex + 1) / total) * 100}%` }}
+        />
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={q.question_id}
-          initial={{ opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -24 }}
-          transition={{ duration: 0.25 }}
-          className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm"
-        >
-          <div className="flex items-center gap-2 mb-4">
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
-                isListening
-                  ? "bg-sky-100 text-sky-700"
-                  : "bg-emerald-100 text-emerald-700"
+      {/* Passage */}
+      {currentQuestion.passage_text &&
+        currentQuestion.passage_text.trim() !== "" && (
+          <div className="bg-gray-100 rounded-lg p-4 mb-4 text-sm leading-relaxed whitespace-pre-wrap">
+            {currentQuestion.passage_text}
+          </div>
+        )}
+
+      {/* Question text */}
+      <p className="text-base font-medium mb-4 whitespace-pre-wrap">
+        {currentQuestion.question_text}
+      </p>
+
+      {/* Audio player */}
+      {currentQuestion.section === "listening" && resolvedAudioUrl !== "" && (
+        <div className="mb-4">
+          <audio
+            controls
+            controlsList="nodownload"
+            onPlay={() => setHasPlayed()}
+            src={resolvedAudioUrl}
+            className="w-full"
+          >
+            お使いのブラウザは音声再生に対応していません。
+          </audio>
+          {!hasPlayed && (
+            <p className="text-gray-400 text-xs mt-1 text-center">
+              ▶ 音声を再生すると選択肢が表示されます
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Choices */}
+      {showChoices && (
+        <div className="space-y-3">
+          {choices.map((choice) => (
+            <button
+              key={choice.key}
+              onClick={() => setSelectedAnswer(choice.key)}
+              className={`w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors ${
+                selectedAnswer === choice.key
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
               }`}
             >
-              {isListening ? (
-                <><Volume2 className="h-3 w-3" />聴解</>
-              ) : (
-                "読解"
-              )}
-            </span>
-            <span className="text-xs text-muted-foreground">No.{q.question_number}</span>
-          </div>
+              {choice.key}. {choice.value}
+            </button>
+          ))}
+        </div>
+      )}
 
-          {q.passage_text && q.passage_text.trim() !== "" && (
-            <div className="mb-4 rounded-xl bg-muted p-4 text-sm leading-relaxed text-foreground whitespace-pre-wrap">
-              {q.passage_text}
-            </div>
-          )}
+      {error && (
+        <div className="mt-4 flex items-start gap-2 rounded-lg bg-destructive/5 border border-destructive/20 p-3 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
-          {isListening && audioUrl && (
-            <AudioPlayer
-              key={q.question_id}
-              src={resolveAudioUrl(audioUrl)}
-              onPlayed={() =>
-                setAudioPlayedMap((prev) => ({ ...prev, [q.question_id]: true }))
-              }
-              played={!!audioPlayedMap[q.question_id]}
-            />
-          )}
-
-          <h2 className="text-lg font-bold text-foreground leading-relaxed mb-5">
-            {q.question_text}
-          </h2>
-
-          {audioReady ? (
-            <div className="space-y-2.5">
-              {choices.map((c) => {
-                const isSelected = selected === c.key;
-                return (
-                  <button
-                    key={c.key}
-                    onClick={() => pickChoice(c.key)}
-                    className={`w-full text-left rounded-xl border-2 px-4 py-3.5 transition-all ${
-                      isSelected
-                        ? "border-primary bg-primary/5 shadow-sm"
-                        : "border-border bg-background hover:border-primary/40 hover:bg-muted/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 text-sm font-bold transition-colors ${
-                          isSelected
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border text-muted-foreground"
-                        }`}
-                      >
-                        {c.key}
-                      </div>
-                      <span className="text-sm sm:text-base font-medium text-foreground">{c.text}</span>
-                      {isSelected && <CheckCircle2 className="ml-auto h-5 w-5 text-primary shrink-0" />}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-xl border-2 border-dashed border-border bg-muted/30 p-6 text-center">
-              <Volume2 className="mx-auto h-6 w-6 text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">
-                音声を再生すると選択肢が表示されます
-              </p>
-            </div>
-          )}
-
-          {error && (
-            <div className="mt-4 flex items-start gap-2 rounded-lg bg-destructive/5 border border-destructive/20 p-3 text-sm text-destructive">
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <AnimatePresence>
-            {selected && audioReady && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="mt-6"
-              >
-                <button
-                  onClick={handleNext}
-                  disabled={loading}
-                  className={`w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-base font-bold transition-all disabled:opacity-60 active:scale-[0.98] ${
-                    isLast
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/20"
-                      : "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20"
-                  }`}
-                >
-                  {loading ? (
-                    <><Loader2 className="h-5 w-5 animate-spin" />送信中...</>
-                  ) : isLast ? (
-                    <>回答を送信する<CheckCircle2 className="h-5 w-5" /></>
-                  ) : (
-                    <>次へ<ChevronRight className="h-5 w-5" /></>
-                  )}
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-function AudioPlayer({
-  src, onPlayed, played,
-}: {
-  src: string;
-  onPlayed: () => void;
-  played: boolean;
-}) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [hasPlayedOnce, setHasPlayedOnce] = useState(played);
-  const [loadError, setLoadError] = useState(false);
-
-  useEffect(() => { setHasPlayedOnce(played); }, [played]);
-
-  const handlePlay = () => {
-    const a = audioRef.current;
-    if (!a || hasPlayedOnce) return;
-    setLoadError(false);
-    a.play().catch(() => setLoadError(true));
-  };
-
-  return (
-    <div className="mb-5 rounded-xl border border-border bg-muted/40 p-4">
-      <audio
-        ref={audioRef}
-        src={src}
-        preload="auto"
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
-        onTimeUpdate={(e) => setProgress(e.currentTarget.currentTime)}
-        onEnded={() => { setIsPlaying(false); setHasPlayedOnce(true); onPlayed(); }}
-        onError={() => setLoadError(true)}
-      />
-      <div className="flex items-center gap-3">
+      {/* Next / Submit */}
+      {selectedAnswer && (
         <button
-          onClick={handlePlay}
-          disabled={hasPlayedOnce || isPlaying}
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all ${
-            hasPlayedOnce
-              ? "bg-muted text-muted-foreground cursor-not-allowed"
-              : isPlaying
-              ? "bg-primary/80 text-primary-foreground"
-              : "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md active:scale-95"
-          }`}
-          aria-label="音声を再生"
+          onClick={handleNext}
+          disabled={loading}
+          className="mt-6 w-full py-3 rounded-lg bg-green-700 text-white font-medium disabled:opacity-60 inline-flex items-center justify-center gap-2"
         >
-          {isPlaying ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+          {loading ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              送信中...
+            </>
+          ) : isLast ? (
+            <>
+              結果を見る
+              <CheckCircle2 className="h-5 w-5" />
+            </>
           ) : (
-            <Play className="h-5 w-5 ml-0.5" fill="currentColor" />
+            <>
+              次の問題へ
+              <ChevronRight className="h-5 w-5" />
+            </>
           )}
         </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-semibold text-foreground">
-              {hasPlayedOnce ? "再生済み" : isPlaying ? "再生中..." : "音声を再生してください（1回のみ）"}
-            </span>
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {formatTime(progress)} / {formatTime(duration)}
-            </span>
-          </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{ width: duration > 0 ? `${(progress / duration) * 100}%` : "0%" }}
-            />
-          </div>
-        </div>
-      </div>
-      {loadError && (
-        <p className="mt-2 text-xs text-destructive">音声を読み込めませんでした。</p>
       )}
     </div>
   );
-}
-
-function formatTime(sec: number): string {
-  if (!isFinite(sec) || sec < 0) return "0:00";
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 /* ---------- Result Screen ---------- */
