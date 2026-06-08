@@ -15,7 +15,7 @@ import {
   fetchQuestions,
   submitAnswers,
   resolveAudioUrl,
-  calculateBand,
+  getBandInfo,
   type Question,
   type SubmitResponse,
   type SubmitAnswer,
@@ -34,13 +34,14 @@ export const Route = createFileRoute("/")({
 });
 
 type Screen = "start" | "test" | "result";
-type Choice = "a" | "b" | "c" | "d";
+type Choice = "A" | "B" | "C" | "D";
 
 function PreCheckApp() {
   const [screen, setScreen] = useState<Screen>("start");
   const [name, setName] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, Choice>>({});
+  const [audioPlayedMap, setAudioPlayedMap] = useState<Record<string, boolean>>({});
   const [result, setResult] = useState<SubmitResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +61,7 @@ function PreCheckApp() {
       if (qs.length === 0) throw new Error("問題が見つかりませんでした。");
       setQuestions(qs);
       setAnswers({});
+      setAudioPlayedMap({});
       setScreen("test");
     } catch (e) {
       setError(e instanceof Error ? `問題の取得に失敗しました: ${e.message}` : "問題の取得に失敗しました。");
@@ -74,7 +76,8 @@ function PreCheckApp() {
     try {
       const payload: SubmitAnswer[] = questions.map((q) => ({
         question_id: q.question_id,
-        selected: (answers[q.question_id] ?? "a") as Choice,
+        answer: (answers[q.question_id] ?? "A") as "A" | "B" | "C" | "D",
+        audio_played_flag: !!audioPlayedMap[q.question_id],
       }));
       const res = await submitAnswers(name.trim(), payload);
       setResult(res);
@@ -90,6 +93,7 @@ function PreCheckApp() {
   const handleRestart = () => {
     setScreen("start");
     setAnswers({});
+    setAudioPlayedMap({});
     setResult(null);
     setError(null);
   };
@@ -114,6 +118,8 @@ function PreCheckApp() {
               questions={questions}
               answers={answers}
               setAnswers={setAnswers}
+              audioPlayedMap={audioPlayedMap}
+              setAudioPlayedMap={setAudioPlayedMap}
               onSubmit={handleSubmit}
               loading={loading}
               error={error}
