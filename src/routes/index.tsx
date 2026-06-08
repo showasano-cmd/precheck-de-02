@@ -438,7 +438,10 @@ function ResultScreen({
         >
           <CheckCircle2 className={`h-10 w-10 ${band.color}`} />
         </motion.div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+        <h1
+          className="text-2xl sm:text-3xl font-extrabold text-foreground"
+          style={{ fontFamily: "'Inter', 'Noto Sans', 'Segoe UI', sans-serif" }}
+        >
           Kết quả của {name}
         </h1>
       </div>
@@ -475,10 +478,11 @@ function ResultScreen({
         className="mt-6 space-y-3"
       >
         <a
-          href="https://www.facebook.com/J.TEST.VIETNAM"
+          href="https://jtest.com.vn/"
           target="_blank"
           rel="noopener noreferrer"
           className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-4 text-base font-bold text-white transition-all hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/20 active:scale-[0.98]"
+          style={{ fontFamily: "'Inter', 'Noto Sans', 'Segoe UI', sans-serif" }}
         >
           Truy cập trang J.TEST chính thức
           <ExternalLink className="h-5 w-5" />
