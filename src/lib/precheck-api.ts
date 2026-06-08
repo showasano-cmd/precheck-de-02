@@ -1,13 +1,13 @@
 // Client for the PreCheck DE GAS API.
-// GAS web apps are CORS-friendly when requests use simple content types
-// (text/plain) so the browser does not send a preflight.
+// All calls are GET only with URLSearchParams; responses are parsed with
+// response.text() + JSON.parse() to handle GAS quirks.
 
 export const GAS_ENDPOINT =
   "https://script.google.com/macros/s/AKfycbzQX34XoM9xdxel9zSocfiEZ4YOMYmUbuxZDfcBTgfRDh8CmtWMtwAuOT6UsfrvPXjw1g/exec";
 
 export const TEST_ID = "precheck_de_lite_v2";
 
-export const AUDIO_BASE_URL =
+export const GITHUB_ASSET_BASE =
   "https://github.com/showasano-cmd/precheck-de-02/raw/main/public";
 
 export type QuestionType = "reading" | "listening";
@@ -18,6 +18,7 @@ export interface Question {
   question_type: QuestionType;
   question_text: string;
   passage_text?: string;
+  audio_url?: string;
   audio_file?: string;
   display_rule?: "after_audio" | string;
   choice_a: string;
@@ -36,13 +37,8 @@ export interface FetchQuestionsResponse {
 
 export interface SubmitAnswer {
   question_id: string;
-  selected: "a" | "b" | "c" | "d";
-}
-
-export interface SubmitPayload {
-  test_id: string;
-  name: string;
-  answers: SubmitAnswer[];
+  answer: "A" | "B" | "C" | "D";
+  audio_played_flag: boolean;
 }
 
 export interface SubmitResponse {
@@ -57,56 +53,54 @@ export interface SubmitResponse {
   }>;
 }
 
-async function gasRequest<T>(
-  params: Record<string, string>,
-  body?: unknown,
-): Promise<T> {
-  const url = new URL(GAS_ENDPOINT);
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-
-  const init: RequestInit = body
-    ? {
-        method: "POST",
-        // text/plain avoids the CORS preflight on Apps Script web apps.
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(body),
-      }
-    : { method: "GET" };
-
-  const res = await fetch(url.toString(), init);
-  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
-  const text = await res.text();
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    throw new Error(`Invalid JSON from GAS: ${text.slice(0, 200)}`);
-  }
-}
-
 export async function fetchQuestions(): Promise<FetchQuestionsResponse> {
-  return gasRequest<FetchQuestionsResponse>({
-    action: "get_questions",
+  const params = new URLSearchParams({
+    action: "getQuestions",
     test_id: TEST_ID,
   });
+  const url = `${GAS_ENDPOINT}?${params.toString()}`;
+  const response = await fetch(url, {
+    method: "GET",
+    redirect: "follow",
+    mode: "cors",
+  });
+  const text = await response.text();
+  const data = JSON.parse(text) as FetchQuestionsResponse;
+  console.log("RAW API RESPONSE:", JSON.stringify(data));
+  return data;
 }
 
 export async function submitAnswers(
-  name: string,
-  answers: SubmitAnswer[],
+  examineeName: string,
+  answersArray: SubmitAnswer[],
 ): Promise<SubmitResponse> {
-  return gasRequest<SubmitResponse>(
-    { action: "submit", test_id: TEST_ID },
-    { test_id: TEST_ID, name, answers } satisfies SubmitPayload,
-  );
+  const params = new URLSearchParams({
+    action: "submitAnswers",
+    test_id: TEST_ID,
+    examinee_id: examineeName,
+    answers_json: JSON.stringify(answersArray),
+  });
+  const url = `${GAS_ENDPOINT}?${params.toString()}`;
+  const response = await fetch(url, {
+    method: "GET",
+    redirect: "follow",
+    mode: "cors",
+  });
+  const text = await response.text();
+  const data = JSON.parse(text) as SubmitResponse;
+  console.log("SUBMIT RESPONSE:", JSON.stringify(data));
+  return data;
 }
 
-export function resolveAudioUrl(file: string): string {
-  if (/^https?:\/\//i.test(file)) return file;
-  const clean = file.replace(/^\/+/, "");
-  return `${AUDIO_BASE_URL}/${clean}`;
+export function getAudioUrl(url: string): string {
+  if (!url) return "";
+  if (url.startsWith("/audio/")) return GITHUB_ASSET_BASE + url;
+  return url;
 }
 
-// Band rules (client-side). Tune as needed.
+// Backwards-compatible alias used by the UI.
+export const resolveAudioUrl = getAudioUrl;
+
 export interface Band {
   label: string;
   message: string;
@@ -114,40 +108,45 @@ export interface Band {
   bg: string;
 }
 
-export function calculateBand(score: number, max: number): Band {
-  const pct = max > 0 ? (score / max) * 100 : 0;
-  if (pct >= 85)
-    return {
-      label: "特A級レベル",
-      message: "素晴らしい結果です！J.TEST DE 上位合格が十分狙えます。",
-      color: "text-emerald-700",
-      bg: "bg-emerald-50",
-    };
-  if (pct >= 70)
-    return {
-      label: "A級レベル",
-      message: "とても良い成績です。本番でも十分通用する力があります。",
-      color: "text-sky-700",
-      bg: "bg-sky-50",
-    };
-  if (pct >= 55)
-    return {
-      label: "準A級レベル",
-      message: "あと一歩。弱点を復習すれば合格圏内です。",
-      color: "text-blue-700",
-      bg: "bg-blue-50",
-    };
-  if (pct >= 40)
-    return {
-      label: "B級レベル",
-      message: "基礎は身についています。語彙と聴解を強化しましょう。",
-      color: "text-amber-700",
-      bg: "bg-amber-50",
-    };
+export function getBand(score: number): "A" | "B" | "C" | "D" | "E" {
+  if (score >= 13) return "A";
+  if (score >= 11) return "B";
+  if (score >= 8) return "C";
+  if (score >= 5) return "D";
+  return "E";
+}
+
+export function getFeedback(band: string): string {
+  switch (band) {
+    case "A":
+      return "素晴らしい結果です！DEレベルの実力が十分あります。";
+    case "B":
+      return "よくできました。もう少しで上のレベルに届きます。";
+    case "C":
+      return "基礎はできています。さらに練習を続けましょう。";
+    case "D":
+      return "基礎の復習が必要です。基本文法から確認しましょう。";
+    case "E":
+      return "まずは基礎から始めましょう。一緒に頑張りましょう。";
+    default:
+      return "";
+  }
+}
+
+const BAND_STYLES: Record<string, { color: string; bg: string }> = {
+  A: { color: "text-emerald-700", bg: "bg-emerald-50" },
+  B: { color: "text-sky-700", bg: "bg-sky-50" },
+  C: { color: "text-blue-700", bg: "bg-blue-50" },
+  D: { color: "text-amber-700", bg: "bg-amber-50" },
+  E: { color: "text-rose-700", bg: "bg-rose-50" },
+};
+
+export function getBandInfo(score: number): Band {
+  const b = getBand(score);
   return {
-    label: "C級レベル",
-    message: "もう少し学習が必要です。基礎から固めていきましょう。",
-    color: "text-rose-700",
-    bg: "bg-rose-50",
+    label: `${b}バンド`,
+    message: getFeedback(b),
+    color: BAND_STYLES[b].color,
+    bg: BAND_STYLES[b].bg,
   };
 }
