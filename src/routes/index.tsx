@@ -104,6 +104,7 @@ function PreCheckApp() {
 
   return (
     <div className="min-h-screen bg-background">
+      <AppHeader />
       <div className="mx-auto max-w-xl px-4 py-6 sm:py-10">
         <AnimatePresence mode="wait">
           {screen === "start" && (
@@ -143,6 +144,18 @@ function PreCheckApp() {
   );
 }
 
+function AppHeader() {
+  return (
+    <header className="w-full bg-[#0b1e3b] text-white">
+      <div className="mx-auto max-w-xl px-4 py-4 text-center">
+        <h1 className="text-lg sm:text-xl font-extrabold tracking-tight">
+          J.TEST PreCheck <span className="text-emerald-400">DE</span>
+        </h1>
+      </div>
+    </header>
+  );
+}
+
 /* ---------- Start Screen ---------- */
 
 function StartScreen({
@@ -171,19 +184,22 @@ function StartScreen({
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
           J.TEST プレチェック DE
         </h1>
-        <p className="mt-3 text-base text-muted-foreground">実力を確認しましょう</p>
+        <p className="mt-3 text-base text-muted-foreground">Kiểm tra trình độ tiếng Nhật</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Cấp độ D-E (tương đương JLPT N3–N4) — 15 câu hỏi
+        </p>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <label htmlFor="name" className="block text-sm font-semibold text-foreground mb-2">
-          お名前 <span className="text-destructive">*</span>
+          Họ và tên của bạn <span className="text-destructive">*</span>
         </label>
         <input
           id="name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="お名前を入力してください"
+          placeholder="Nguyễn Văn A"
           className="w-full rounded-xl border-2 border-input bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition"
           autoComplete="name"
         />
@@ -207,11 +223,11 @@ function StartScreen({
           {loading ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
-              読み込み中...
+              Đang tải...
             </>
           ) : (
             <>
-              テストを始める
+              Bắt đầu
               <ChevronRight className="h-5 w-5" />
             </>
           )}
@@ -284,7 +300,7 @@ function TestScreen({
     <div className="p-4 max-w-lg mx-auto">
       {/* Progress */}
       <div className="text-sm text-gray-500 mb-2">
-        {currentIndex + 1} / {total}
+        Câu {currentIndex + 1} / {total}
       </div>
       <div className="w-full bg-gray-200 rounded h-2 mb-4">
         <div
@@ -333,13 +349,22 @@ function TestScreen({
             <button
               key={choice.key}
               onClick={() => setSelectedAnswer(choice.key)}
-              className={`w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors ${
+              className={`w-full text-left px-4 py-3 rounded-lg border text-base transition-colors flex items-center gap-3 ${
                 selectedAnswer === choice.key
                   ? "bg-blue-600 text-white border-blue-600"
                   : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
               }`}
             >
-              {choice.key}. {choice.value}
+              <span
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                  selectedAnswer === choice.key
+                    ? "bg-white text-blue-600"
+                    : "bg-gray-100 text-gray-700"
+                }`}
+              >
+                {choice.key}
+              </span>
+              <span className="flex-1">{choice.value}</span>
             </button>
           ))}
         </div>
@@ -362,16 +387,16 @@ function TestScreen({
           {loading ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
-              送信中...
+              Đang gửi...
             </>
           ) : isLast ? (
             <>
-              結果を見る
+              Nộp bài
               <CheckCircle2 className="h-5 w-5" />
             </>
           ) : (
             <>
-              次の問題へ
+              Câu tiếp theo
               <ChevronRight className="h-5 w-5" />
             </>
           )}
@@ -414,7 +439,7 @@ function ResultScreen({
           <CheckCircle2 className={`h-10 w-10 ${band.color}`} />
         </motion.div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-          {name}さんの結果
+          Kết quả của {name}
         </h1>
       </div>
 
@@ -424,19 +449,19 @@ function ResultScreen({
         transition={{ delay: 0.3 }}
         className="rounded-2xl border border-border bg-card p-6 shadow-sm text-center"
       >
-        <div className="text-sm font-semibold text-muted-foreground mb-2">スコア</div>
+        <div className="text-sm font-semibold text-muted-foreground mb-2">Điểm số</div>
         <div className="flex items-baseline justify-center gap-2 mb-1">
           <span className="text-5xl sm:text-6xl font-extrabold text-foreground tabular-nums">
             {result.total_score}
           </span>
           <span className="text-2xl font-bold text-muted-foreground">/ {result.max_score}</span>
-          <span className="text-2xl font-bold text-muted-foreground">点</span>
+          <span className="text-2xl font-bold text-muted-foreground">điểm</span>
         </div>
-        <div className="text-sm text-muted-foreground">正答率 {pct}%</div>
+        <div className="text-sm text-muted-foreground">Tỷ lệ đúng {pct}%</div>
 
         <div className="my-6 h-px bg-border" />
 
-        <div className="text-sm font-semibold text-muted-foreground mb-2">判定バンド</div>
+        <div className="text-sm font-semibold text-muted-foreground mb-2">Xếp loại</div>
         <div className={`inline-block rounded-full px-5 py-2 text-lg font-extrabold ${band.bg} ${band.color}`}>
           {band.label}
         </div>
@@ -455,7 +480,7 @@ function ResultScreen({
           rel="noopener noreferrer"
           className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-4 text-base font-bold text-white transition-all hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/20 active:scale-[0.98]"
         >
-          J.TEST公式サイトへ
+          Truy cập trang J.TEST chính thức
           <ExternalLink className="h-5 w-5" />
         </a>
         <button
@@ -463,7 +488,7 @@ function ResultScreen({
           className="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-border bg-background px-6 py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
         >
           <RotateCcw className="h-4 w-4" />
-          もう一度受ける
+          Làm lại bài kiểm tra
         </button>
       </motion.div>
     </motion.div>
