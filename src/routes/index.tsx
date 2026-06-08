@@ -2,14 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Play,
   Loader2,
   CheckCircle2,
   ChevronRight,
   AlertCircle,
   ExternalLink,
   RotateCcw,
-  Volume2,
 } from "lucide-react";
 import {
   fetchQuestions,
