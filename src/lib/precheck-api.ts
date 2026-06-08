@@ -29,7 +29,9 @@ export interface Question {
 }
 
 export interface FetchQuestionsResponse {
+  status?: string;
   ok?: boolean;
+  error?: string;
   questions: Question[];
   max_score?: number;
   test_id?: string;
