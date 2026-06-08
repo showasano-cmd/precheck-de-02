@@ -146,6 +146,7 @@
     color: var(--color-foreground);
     font-feature-settings: "cv11", "ss01";
     font-variation-settings: "opsz" 450;
+    font-family: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
   }
 
   html {

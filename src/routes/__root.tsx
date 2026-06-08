@@ -11,7 +11,6 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { Navbar } from "../components/Navbar";
 
 function NotFoundComponent() {
   return (
@@ -78,19 +77,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "PreCheck DE02 — Practice & Pass" },
-      { name: "description", content: "Master the DE02 certification with smart practice tests, progress tracking, and adaptive learning." },
+      { title: "J.TEST プレチェック DE" },
+      { name: "description", content: "J.TEST DE 実力確認のためのプレチェックテスト" },
       { name: "author", content: "PreCheck DE02" },
-      { property: "og:title", content: "PreCheck DE02 — Practice & Pass" },
-      { property: "og:description", content: "Master the DE02 certification with smart practice tests, progress tracking, and adaptive learning." },
+      { property: "og:title", content: "J.TEST プレチェック DE" },
+      { property: "og:description", content: "J.TEST DE 実力確認のためのプレチェックテスト" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@PreCheckDE02" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap",
       },
     ],
   }),
@@ -119,7 +123,6 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Navbar />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>
