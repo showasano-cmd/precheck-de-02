@@ -15,7 +15,7 @@ import {
   fetchQuestions,
   submitAnswers,
   resolveAudioUrl,
-  calculateBand,
+  getBandInfo,
   type Question,
   type SubmitResponse,
   type SubmitAnswer,
@@ -34,13 +34,14 @@ export const Route = createFileRoute("/")({
 });
 
 type Screen = "start" | "test" | "result";
-type Choice = "a" | "b" | "c" | "d";
+type Choice = "A" | "B" | "C" | "D";
 
 function PreCheckApp() {
   const [screen, setScreen] = useState<Screen>("start");
   const [name, setName] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, Choice>>({});
+  const [audioPlayedMap, setAudioPlayedMap] = useState<Record<string, boolean>>({});
   const [result, setResult] = useState<SubmitResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +61,7 @@ function PreCheckApp() {
       if (qs.length === 0) throw new Error("問題が見つかりませんでした。");
       setQuestions(qs);
       setAnswers({});
+      setAudioPlayedMap({});
       setScreen("test");
     } catch (e) {
       setError(e instanceof Error ? `問題の取得に失敗しました: ${e.message}` : "問題の取得に失敗しました。");
@@ -74,7 +76,8 @@ function PreCheckApp() {
     try {
       const payload: SubmitAnswer[] = questions.map((q) => ({
         question_id: q.question_id,
-        selected: (answers[q.question_id] ?? "a") as Choice,
+        answer: (answers[q.question_id] ?? "A") as "A" | "B" | "C" | "D",
+        audio_played_flag: !!audioPlayedMap[q.question_id],
       }));
       const res = await submitAnswers(name.trim(), payload);
       setResult(res);
@@ -90,6 +93,7 @@ function PreCheckApp() {
   const handleRestart = () => {
     setScreen("start");
     setAnswers({});
+    setAudioPlayedMap({});
     setResult(null);
     setError(null);
   };
@@ -114,6 +118,8 @@ function PreCheckApp() {
               questions={questions}
               answers={answers}
               setAnswers={setAnswers}
+              audioPlayedMap={audioPlayedMap}
+              setAudioPlayedMap={setAudioPlayedMap}
               onSubmit={handleSubmit}
               loading={loading}
               error={error}
@@ -216,11 +222,13 @@ function StartScreen({
 /* ---------- Test Screen ---------- */
 
 function TestScreen({
-  questions, answers, setAnswers, onSubmit, loading, error,
+  questions, answers, setAnswers, audioPlayedMap, setAudioPlayedMap, onSubmit, loading, error,
 }: {
   questions: Question[];
   answers: Record<string, Choice>;
   setAnswers: React.Dispatch<React.SetStateAction<Record<string, Choice>>>;
+  audioPlayedMap: Record<string, boolean>;
+  setAudioPlayedMap: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   onSubmit: () => void;
   loading: boolean;
   error: string | null;
@@ -231,11 +239,10 @@ function TestScreen({
   const isLast = index === total - 1;
   const selected = answers[q.question_id];
 
-  const [audioPlayed, setAudioPlayed] = useState<Record<string, boolean>>({});
   const audioReady =
     q.question_type !== "listening" ||
     q.display_rule !== "after_audio" ||
-    audioPlayed[q.question_id];
+    audioPlayedMap[q.question_id];
 
   const pickChoice = (c: Choice) => {
     setAnswers((prev) => ({ ...prev, [q.question_id]: c }));
@@ -251,10 +258,10 @@ function TestScreen({
   };
 
   const choices = ([
-    { key: "a" as Choice, text: q.choice_a },
-    { key: "b" as Choice, text: q.choice_b },
-    { key: "c" as Choice, text: q.choice_c },
-    { key: "d" as Choice, text: q.choice_d },
+    { key: "A" as Choice, text: q.choice_a },
+    { key: "B" as Choice, text: q.choice_b },
+    { key: "C" as Choice, text: q.choice_c },
+    { key: "D" as Choice, text: q.choice_d },
   ]).filter((c) => c.text && c.text.trim() !== "") as Array<{ key: Choice; text: string }>;
 
   return (
@@ -311,14 +318,14 @@ function TestScreen({
             </div>
           )}
 
-          {q.question_type === "listening" && q.audio_file && (
+          {q.question_type === "listening" && (q.audio_url || q.audio_file) && (
             <AudioPlayer
               key={q.question_id}
-              src={resolveAudioUrl(q.audio_file)}
+              src={resolveAudioUrl((q.audio_url || q.audio_file) as string)}
               onPlayed={() =>
-                setAudioPlayed((prev) => ({ ...prev, [q.question_id]: true }))
+                setAudioPlayedMap((prev) => ({ ...prev, [q.question_id]: true }))
               }
-              played={!!audioPlayed[q.question_id]}
+              played={!!audioPlayedMap[q.question_id]}
             />
           )}
 
@@ -348,7 +355,7 @@ function TestScreen({
                             : "border-border text-muted-foreground"
                         }`}
                       >
-                        {c.key.toUpperCase()}
+                        {c.key}
                       </div>
                       <span className="text-sm sm:text-base font-medium text-foreground">{c.text}</span>
                       {isSelected && <CheckCircle2 className="ml-auto h-5 w-5 text-primary shrink-0" />}
@@ -502,7 +509,7 @@ function ResultScreen({
   result: SubmitResponse;
   onRestart: () => void;
 }) {
-  const band = useMemo(() => calculateBand(result.total_score, result.max_score), [result]);
+  const band = useMemo(() => getBandInfo(result.total_score), [result]);
   const pct = useMemo(
     () => (result.max_score > 0 ? Math.round((result.total_score / result.max_score) * 100) : 0),
     [result],
