@@ -122,15 +122,15 @@ export function getBand(score: number): "A" | "B" | "C" | "D" | "E" {
 export function getFeedback(band: string): string {
   switch (band) {
     case "A":
-      return "素晴らしい結果です！DEレベルの実力が十分あります。";
+      return "Kết quả xuất sắc! Bạn đã có đủ năng lực trình độ D-E.";
     case "B":
-      return "よくできました。もう少しで上のレベルに届きます。";
+      return "Rất tốt! Chỉ cần một chút nữa là bạn sẽ đạt trình độ cao hơn.";
     case "C":
-      return "基礎はできています。さらに練習を続けましょう。";
+      return "Bạn đã nắm được kiến thức cơ bản. Hãy tiếp tục luyện tập nhé!";
     case "D":
-      return "基礎の復習が必要です。基本文法から確認しましょう。";
+      return "Bạn cần ôn lại kiến thức cơ bản. Hãy bắt đầu từ ngữ pháp căn bản.";
     case "E":
-      return "まずは基礎から始めましょう。一緒に頑張りましょう。";
+      return "Hãy bắt đầu từ những điều cơ bản. Chúng ta cùng cố gắng nhé!";
     default:
       return "";
   }
@@ -147,7 +147,7 @@ const BAND_STYLES: Record<string, { color: string; bg: string }> = {
 export function getBandInfo(score: number): Band {
   const b = getBand(score);
   return {
-    label: `${b}バンド`,
+    label: `Band ${b}`,
     message: getFeedback(b),
     color: BAND_STYLES[b].color,
     bg: BAND_STYLES[b].bg,
