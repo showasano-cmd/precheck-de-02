@@ -54,11 +54,17 @@ function PreCheckApp() {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetchQuestions();
-      const qs = (res.questions ?? []).slice().sort(
-        (a, b) => a.question_number - b.question_number,
-      );
-      if (qs.length === 0) throw new Error("問題が見つかりませんでした。");
+      const data = await fetchQuestions();
+      if (data.status !== "ok" || !data.questions || data.questions.length === 0) {
+        setError(
+          "問題の取得に失敗しました: " +
+            (data.error || "問題が見つかりませんでした。"),
+        );
+        return;
+      }
+      const qs = data.questions
+        .slice()
+        .sort((a, b) => a.question_number - b.question_number);
       setQuestions(qs);
       setAnswers({});
       setAudioPlayedMap({});
