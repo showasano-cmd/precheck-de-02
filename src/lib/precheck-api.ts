@@ -15,7 +15,8 @@ export type QuestionType = "reading" | "listening";
 export interface Question {
   question_id: string;
   question_number: number;
-  question_type: QuestionType;
+  question_type?: QuestionType;
+  section?: string;
   question_text: string;
   passage_text?: string;
   audio_url?: string;

@@ -245,10 +245,11 @@ function TestScreen({
   const isLast = index === total - 1;
   const selected = answers[q.question_id];
 
+  const isListening =
+    q.section === "listening" || q.question_type === "listening";
+  const audioUrl = q.audio_url || q.audio_file || "";
   const audioReady =
-    q.question_type !== "listening" ||
-    q.display_rule !== "after_audio" ||
-    audioPlayedMap[q.question_id];
+    !isListening || !audioUrl || audioPlayedMap[q.question_id];
 
   const pickChoice = (c: Choice) => {
     setAnswers((prev) => ({ ...prev, [q.question_id]: c }));
@@ -304,12 +305,12 @@ function TestScreen({
           <div className="flex items-center gap-2 mb-4">
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
-                q.question_type === "listening"
+                isListening
                   ? "bg-sky-100 text-sky-700"
                   : "bg-emerald-100 text-emerald-700"
               }`}
             >
-              {q.question_type === "listening" ? (
+              {isListening ? (
                 <><Volume2 className="h-3 w-3" />聴解</>
               ) : (
                 "読解"
@@ -318,16 +319,16 @@ function TestScreen({
             <span className="text-xs text-muted-foreground">No.{q.question_number}</span>
           </div>
 
-          {q.question_type === "reading" && q.passage_text && (
+          {q.passage_text && q.passage_text.trim() !== "" && (
             <div className="mb-4 rounded-xl bg-muted p-4 text-sm leading-relaxed text-foreground whitespace-pre-wrap">
               {q.passage_text}
             </div>
           )}
 
-          {q.question_type === "listening" && (q.audio_url || q.audio_file) && (
+          {isListening && audioUrl && (
             <AudioPlayer
               key={q.question_id}
-              src={resolveAudioUrl((q.audio_url || q.audio_file) as string)}
+              src={resolveAudioUrl(audioUrl)}
               onPlayed={() =>
                 setAudioPlayedMap((prev) => ({ ...prev, [q.question_id]: true }))
               }
