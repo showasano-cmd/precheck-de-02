@@ -296,7 +296,7 @@ function TestScreen({
       {/* Passage */}
       {currentQuestion.passage_text &&
         currentQuestion.passage_text.trim() !== "" && (
-          <div className="bg-gray-100 rounded-lg p-4 mb-4 text-sm leading-relaxed whitespace-pre-wrap">
+          <div className="bg-gray-100 rounded-lg p-4 mb-4 text-base leading-relaxed whitespace-pre-wrap">
             {currentQuestion.passage_text}
           </div>
         )}
